@@ -1,59 +1,61 @@
-# Vermonticks
+# Vermont ticks
 
-This is an [Observable Framework](https://observablehq.com/framework/) app. To install the required dependencies, run:
+**Vermont ticks** is an interactive web application for visualizing and analyzing pathogen risk associated with outdoor activities and disease vectors in Vermont.
 
-```
-npm install
-```
+## Overview
 
-Then, to start the local preview server, run:
+This application helps users understand the relationship between outdoor recreational activities, disease-carrying vectors (like ticks and mosquitoes), and pathogen risk across different regions of Vermont. By combining geographic data with epidemiological modeling, the MAP2LE group provides insights into where and when people might be at higher risk for vector-borne diseases.
 
-```
-npm run dev
-```
+## Features
 
-Then visit <http://localhost:3000> to preview your app.
+### Interactive Risk Visualization
+- **Geographic Mapping**: Displays Vermont topography, trails, and Lake Champlain
+- **Activity Layers**: Toggle between different outdoor activities (currently hiking, with more planned)
+- **Vector Selection**: Choose from multiple disease vectors including blacklegged ticks and mosquitoes
+- **Pathogen Analysis**: Focus on specific pathogens like Lyme disease (B. burgdorferi), Anaplasmosis, and Babesiosis
 
-For more, see <https://observablehq.com/framework/getting-started>.
+### Predictive Modeling
+- **Autoregressive Models**: Forecast risk based on various environmental and temporal indices
+- **Risk Assessment**: Combine activity patterns with vector presence to estimate exposure risk
+- **Temporal Analysis**: Understand how risk varies over time and seasons
 
-## Project structure
+### Data Integration
+- **Trail Networks**: Vermont emergency trails data from VCGI OpenData
+- **Topographic Data**: Detailed Vermont state boundaries and geographic features
+- **Water Bodies**: Lake Champlain mapping for comprehensive geographic context
+- **Municipal Data**: Focus on key Vermont cities and towns
 
-A typical Framework project looks like this:
+## Key Locations
 
-```ini
-.
-├─ src
-│  ├─ components
-│  │  └─ timeline.js           # an importable module
-│  ├─ data
-│  │  ├─ launches.csv.js       # a data loader
-│  │  └─ events.json           # a static data file
-│  ├─ example-dashboard.md     # a page
-│  ├─ example-report.md        # another page
-│  └─ index.md                 # the home page
-├─ .gitignore
-├─ observablehq.config.js      # the app config file
-├─ package.json
-└─ README.md
-```
+The application currently highlights major Vermont municipalities:
+- Burlington
+- Montpelier  
+- Rutland
+- Barre
+- Newport
+- Swanton
+- Vergennes
+- Albany
 
-**`src`** - This is the “source root” — where your source files live. Pages go here. Each page is a Markdown file. Observable Framework uses [file-based routing](https://observablehq.com/framework/project-structure#routing), which means that the name of the file controls where the page is served. You can create as many pages as you like. Use folders to organize your pages.
+## Technology Stack
 
-**`src/index.md`** - This is the home page for your app. You can have as many additional pages as you’d like, but you should always have a home page, too.
+- **Observable Framework**: Interactive data visualization platform
+- **D3.js**: Geographic projections and data visualization
+- **Plot**: Statistical graphics and mapping
+- **TopoJSON**: Efficient geographic data encoding
+- **GeoJSON**: Trail and geographic feature data
 
-**`src/data`** - You can put [data loaders](https://observablehq.com/framework/data-loaders) or static data files anywhere in your source root, but we recommend putting them here.
+## Data Sources
 
-**`src/components`** - You can put shared [JavaScript modules](https://observablehq.com/framework/imports) anywhere in your source root, but we recommend putting them here. This helps you pull code out of Markdown files and into JavaScript modules, making it easier to reuse code across pages, write tests and run linters, and even share code with vanilla web applications.
+- **Vermont Center for Geographic Information (VCGI)**: Trail networks and emergency access routes
+- **Topographic Data**: Vermont state boundaries and terrain
+- **Lake Champlain Data**: Water body boundaries and features
+- **Epidemiological Data**: Pathogen and vector distribution patterns (in development)
 
-**`observablehq.config.js`** - This is the [app configuration](https://observablehq.com/framework/config) file, such as the pages and sections in the sidebar navigation, and the app’s title.
+## Current Status
 
-## Command reference
+⚠️ **Work in Progress** — This application is currently under active development. Some features may be incomplete or subject to change as we refine the models and expand the dataset.
 
-| Command           | Description                                              |
-| ----------------- | -------------------------------------------------------- |
-| `npm install`            | Install or reinstall dependencies                        |
-| `npm run dev`        | Start local preview server                               |
-| `npm run build`      | Build your static site, generating `./dist`              |
-| `npm run deploy`     | Deploy your app to Observable                            |
-| `npm run clean`      | Clear the local data loader cache                        |
-| `npm run observable` | Run commands like `observable help`                      |
+---
+
+*MAP2LE is designed to help outdoor enthusiasts make informed decisions about recreation activities while understanding potential health risks. Always consult with healthcare professionals for medical advice regarding vector-borne diseases.*

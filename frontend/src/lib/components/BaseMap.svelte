@@ -21,13 +21,13 @@
             
             // Load all data using fetchWithCache with fallback files (handles coordinate conversions)
             const [vermontData, countyData, townData, trailData] = await Promise.all([
-                fetchWithCache('vermont_offline', null, '/src/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_vtbnd_SP_v1_3419293524892445662.geojson'),
-                fetchWithCache('counties_offline', null, '/src/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_counties_SP_v1_-196546973346571976.geojson'),
-                fetchWithCache('towns_offline', null, '/src/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_towns_SP_v1_-4796836414587772833.geojson').catch(error => {
+                fetchWithCache('vermont_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_vtbnd_SP_v1_3419293524892445662.geojson'),
+                fetchWithCache('counties_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_counties_SP_v1_-196546973346571976.geojson'),
+                fetchWithCache('towns_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_towns_SP_v1_-4796836414587772833.geojson').catch(error => {
                     console.error('Failed to load town boundaries:', error);
                     return null;
                 }),
-                fetchWithCache('trails_offline', null, '/src/data/FS_VCGI_OPENDATA_Emergency_TRAILS_line_SP_v1_-1226006560882090274.geojson')
+                fetchWithCache('trails_offline', null, '/data/FS_VCGI_OPENDATA_Emergency_TRAILS_line_SP_v1_-1226006560882090274.geojson')
             ]);
             
             // Try to load lake from API (need proper WGS84 coordinates)

@@ -25,6 +25,9 @@ export async function fetchWithCache(key, apiUrl, fallbackUrl, cacheHours = 24) 
         return data;
     } catch (error) {
         console.warn(`API failed for ${key}, trying fallback:`, error);
-        return await json(fallbackUrl);
+        if (fallbackUrl) {
+            return await json(fallbackUrl);
+        }
+        throw error;
     }
 }

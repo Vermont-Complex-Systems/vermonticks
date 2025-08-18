@@ -1,8 +1,6 @@
 <script>
-    import BaseMap from '$lib/components/BaseMap.svelte';
+    import Dashboard from '$lib/components/Dashboard.svelte';
 </script>
 
-<h1>Vermont Map</h1>
-
-<BaseMap />
+<Dashboard />
 

@@ -1,5 +1,6 @@
 <script>
     import { geoPath, geoBounds, geoMercator } from 'd3-geo';
+    import { feature } from 'topojson-client';
     import { fetchWithCache } from '$lib/utils/geodata.js';
     
     let { width = 800, height = 600 } = $props();
@@ -7,9 +8,11 @@
     let vermontBoundary = $state();
     let countyBoundary = $state();
     let lakeChamplain = $state();
+    let surroundingStates = $state();
     let mapPaths = $state([]);
     let countyPaths = $state([]);
     let lakePaths = $state([]);
+    let statePaths = $state([]);
     let projection = $state();
     let pathGenerator = $state();
 
@@ -33,9 +36,15 @@
                 '/src/data/FS_VCGI_OPENDATA_V_WATER_LKCH5K_POLY_SP_v1_-684187697646999143.geojson'
             );
             
+            surroundingStates = await fetchWithCache(
+                'us_states',
+                'https://cdn.jsdelivr.net/npm/us-atlas@3/states-50m.json',
+                null
+            );
+            
+
             if (vermontBoundary && vermontBoundary.features) {
-                const bounds = geoBounds(vermontBoundary);
-                projection = geoMercator().fitSize([width, height], vermontBoundary);
+                projection = geoMercator().fitExtent([[50, 50], [width * 0.6, height - 50]], vermontBoundary);
                 pathGenerator = geoPath().projection(projection);
 
                 mapPaths = vermontBoundary.features.map(feature => pathGenerator(feature));
@@ -47,12 +56,24 @@
                 if (lakeChamplain && lakeChamplain.features) {
                     lakePaths = lakeChamplain.features.map(feature => pathGenerator(feature));
                 }
+                
+                if (surroundingStates) {
+                    const statesGeoJSON = feature(surroundingStates, surroundingStates.objects.states);
+                    const neighboringStates = statesGeoJSON.features.filter(state => 
+                        ['New York', 'New Hampshire', 'Massachusetts', 'Connecticut', 'Maine'].includes(state.properties.name)
+                    );
+                    statePaths = neighboringStates.map(state => pathGenerator(state));
+                }
+                
             }
         })();
     });
 </script>
 
-<svg {width} {height} style="border: 1px solid #ccc;">
+<svg {width} {height} class="w-full h-full">
+    {#each statePaths as path, i}
+        <path d={path} fill="rgba(200, 200, 200, 0.1)" stroke="rgba(150, 150, 150, 0.5)" stroke-width="0.5"/>
+    {/each}
     {#each mapPaths as path, i}
         <path d={path} fill="rgba(255, 165, 0, 0.1)" stroke="orange" stroke-width="1"/>
     {/each}

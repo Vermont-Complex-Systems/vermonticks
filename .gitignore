@@ -1,5 +1,6 @@
 .DS_Store
 /dist/
-node_modules/
+frontend/node_modules/
 yarn-error.log
-myenv/
+.mcp.json
+CLAUDE.md

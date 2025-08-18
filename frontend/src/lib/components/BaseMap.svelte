@@ -19,60 +19,19 @@
         try {
             console.log('Loading map data...');
             
-            // Load all data using fetchWithCache with fallback files (handles coordinate conversions)
+            // Load Vermont, county, town, and trail data
             const [vermontData, countyData, townData, trailData] = await Promise.all([
                 fetchWithCache('vermont_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_vtbnd_SP_v1_3419293524892445662.geojson'),
                 fetchWithCache('counties_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_counties_SP_v1_-196546973346571976.geojson'),
-                fetchWithCache('towns_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_towns_SP_v1_-4796836414587772833.geojson').catch(error => {
-                    console.error('Failed to load town boundaries:', error);
-                    return null;
-                }),
+                fetchWithCache('towns_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_towns_SP_v1_-4796836414587772833.geojson'),
                 fetchWithCache('trails_offline', null, '/data/FS_VCGI_OPENDATA_Emergency_TRAILS_line_SP_v1_-1226006560882090274.geojson')
             ]);
             
-            // Try to load lake from API (need proper WGS84 coordinates)
-            let lakeData = null;
-            try {
-                lakeData = await fetchWithCache(
-                    'lake_champlain',
-                    'https://services1.arcgis.com/BkFxaEFNwHqX3tAw/arcgis/rest/services/FS_VCGI_OPENDATA_V_WATER_LKCH5K_POLY_SP_v1/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson',
-                    null // Skip fallback file since it uses wrong coordinate system
-                );
-                console.log('Lake loaded from API successfully');
-            } catch (error) {
-                console.warn('Could not load lake from API (quota exceeded):', error);
-                lakeData = null;
-            }
-            
-            // Try to load surrounding states (optional)
-            let statesData = null;
-            try {
-                statesData = await fetchWithCache(
-                    'us_states',
-                    'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json',
-                    null
-                );
-            } catch (error) {
-                console.warn('Could not load surrounding states:', error);
-            }
-            
             if (vermontData && vermontData.features) {
-                console.log('Vermont data received:', {
-                    type: vermontData.type,
-                    featureCount: vermontData.features?.length,
-                    firstFeature: vermontData.features?.[0]?.geometry?.type,
-                    bounds: vermontData.features?.[0]?.geometry?.coordinates?.[0]?.slice(0, 2)
-                });
+                console.log('Vermont data received');
                 
-                console.log('Lake data structure:', {
-                    type: lakeData.type,
-                    featureCount: lakeData.features?.length,
-                    firstGeometryType: lakeData.features?.[0]?.geometry?.type,
-                    firstCoords: lakeData.features?.[0]?.geometry?.coordinates?.slice(0, 2)
-                });
-                
-                console.log('Setting up projection...');
-                const projection = geoMercator().fitExtent([[50, 0], [width * 0.9, height - 50]], vermontData);
+                // Set up basic projection with less padding to make Vermont bigger
+                const projection = geoMercator().fitExtent([[20, 20], [width - 20, height - 20]], vermontData);
                 const pathGenerator = geoPath().projection(projection);
                 
                 // Generate Vermont paths
@@ -89,40 +48,6 @@
                 if (townData && townData.features) {
                     townPaths = townData.features.map(feature => pathGenerator(feature));
                     console.log('Town boundaries loaded:', townPaths.length, 'paths');
-                }
-                
-                // Generate lake paths
-                console.log('Lake data received:', {
-                    hasData: !!lakeData,
-                    hasFeatures: !!(lakeData?.features),
-                    featureCount: lakeData?.features?.length,
-                    type: lakeData?.type,
-                    crs: lakeData?.crs
-                });
-                if (lakeData && lakeData.features) {
-                    // The lake data is in EPSG:32145 (Vermont State Plane) coordinates
-                    // Try to generate paths anyway and see if D3 can handle it
-                    try {
-                        lakePaths = lakeData.features.map(feature => {
-                            const path = pathGenerator(feature);
-                            return path;
-                        });
-                        console.log('Lake Champlain loaded:', lakePaths.length, 'paths');
-                        console.log('Sample lake path length:', lakePaths[0]?.length);
-                        
-                        // Debug: Check if paths contain valid coordinates
-                        const samplePath = lakePaths[0];
-                        if (samplePath && samplePath.includes('M')) {
-                            console.log('Lake path seems valid:', samplePath.substring(0, 100) + '...');
-                        } else {
-                            console.warn('Lake path seems invalid or empty');
-                        }
-                    } catch (error) {
-                        console.error('Error generating lake paths:', error);
-                        lakePaths = [];
-                    }
-                } else {
-                    console.warn('Lake data missing or invalid:', lakeData);
                 }
                 
                 // Generate trail paths
@@ -149,14 +74,40 @@
                 }));
                 console.log('Cities loaded:', cities.length, 'cities');
                 
-                // Generate surrounding state paths
-                if (statesData) {
-                    const statesGeoJSON = feature(statesData, statesData.objects.states);
-                    const neighboringStates = statesGeoJSON.features.filter(state => 
-                        ['New York', 'New Hampshire', 'Massachusetts', 'Connecticut', 'Maine'].includes(state.properties.name)
+                // Try to load lake from API (need proper WGS84 coordinates)
+                try {
+                    const lakeData = await fetchWithCache(
+                        'lake_champlain',
+                        'https://services1.arcgis.com/BkFxaEFNwHqX3tAw/arcgis/rest/services/FS_VCGI_OPENDATA_V_WATER_LKCH5K_POLY_SP_v1/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson',
+                        null // Skip fallback file since it uses wrong coordinate system
                     );
-                    statePaths = neighboringStates.map(state => pathGenerator(state));
-                    console.log('Surrounding states loaded:', statePaths.length, 'paths');
+                    
+                    if (lakeData && lakeData.features) {
+                        lakePaths = lakeData.features.map(feature => pathGenerator(feature));
+                        console.log('Lake Champlain loaded:', lakePaths.length, 'paths');
+                    }
+                } catch (error) {
+                    console.warn('Could not load lake from API:', error);
+                }
+                
+                // Try to load surrounding states (optional)
+                try {
+                    const statesData = await fetchWithCache(
+                        'us_states',
+                        'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json',
+                        null
+                    );
+                    
+                    if (statesData) {
+                        const statesGeoJSON = feature(statesData, statesData.objects.states);
+                        const neighboringStates = statesGeoJSON.features.filter(state => 
+                            ['New York', 'New Hampshire', 'Massachusetts', 'Connecticut', 'Maine'].includes(state.properties.name)
+                        );
+                        statePaths = neighboringStates.map(state => pathGenerator(state));
+                        console.log('Surrounding states loaded:', statePaths.length, 'paths');
+                    }
+                } catch (error) {
+                    console.warn('Could not load surrounding states:', error);
                 }
             }
         } catch (error) {

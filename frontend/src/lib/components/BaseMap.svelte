@@ -3,6 +3,7 @@
     import { geoPath, geoMercator } from 'd3-geo';
     import { feature } from 'topojson-client';
     import { fetchWithCache } from '$lib/utils/geodata.js';
+    import { getWeatherForCities } from '$lib/utils/weather.js';
     
     let { width = 800, height = 600 } = $props();
     
@@ -14,7 +15,9 @@
     let trailPaths = $state([]);
     let trailFeatures = $state([]); // Store original trail features with properties
     let cities = $state([]);
+    let citiesWithWeather = $state([]);
     let loading = $state(true);
+    let weatherLoading = $state(false);
     
     // Zoom and pan state
     let scale = $state(1);
@@ -35,7 +38,7 @@
                 fetchWithCache('vermont_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_vtbnd_SP_v1_3419293524892445662.geojson'),
                 fetchWithCache('counties_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_counties_SP_v1_-196546973346571976.geojson'),
                 fetchWithCache('towns_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_towns_SP_v1_-4796836414587772833.geojson'),
-                fetchWithCache('trails_offline', null, '/data/FS_VCGI_OPENDATA_Emergency_TRAILS_line_SP_v1_-1226006560882090274.geojson')
+                fetchWithCache('trails_offline', null, '/data/Trails.geojson')
             ]);
             
             if (vermontData && vermontData.features) {
@@ -90,6 +93,19 @@
                     coords: projection([city.lon, city.lat])
                 }));
                 console.log('Cities loaded:', cities.length, 'cities');
+                
+                // Load weather data for cities
+                weatherLoading = true;
+                try {
+                    console.log('Loading weather data for cities...');
+                    citiesWithWeather = await getWeatherForCities(cities);
+                    console.log('Weather data loaded for', citiesWithWeather.length, 'cities');
+                } catch (error) {
+                    console.error('Failed to load weather data:', error);
+                    citiesWithWeather = cities.map(city => ({ ...city, weather: { error: 'Weather unavailable' } }));
+                } finally {
+                    weatherLoading = false;
+                }
                 
                 // Try to load lake from API (need proper WGS84 coordinates)
                 try {
@@ -192,6 +208,30 @@
         };
     }
     
+    function showCityTooltip(event, city) {
+        const weather = city.weather;
+        let weatherText = '';
+        
+        if (weather?.error) {
+            weatherText = `Weather: ${weather.error}`;
+        } else if (weather?.temperature) {
+            weatherText = `${weather.temperature}°${weather.temperatureUnit} - ${weather.shortForecast}`;
+            if (weather.humidity) {
+                weatherText += `\nHumidity: ${weather.humidity}%`;
+            }
+            if (weather.windSpeed) {
+                weatherText += `\nWind: ${weather.windSpeed} ${weather.windDirection}`;
+            }
+        } else if (weatherLoading) {
+            weatherText = 'Loading weather...';
+        } else {
+            weatherText = 'Weather data unavailable';
+        }
+        
+        const text = `${city.name}\nPopulation: ${city.pop.toLocaleString()}\n${weatherText}`;
+        showTooltip(event, text);
+    }
+    
     function hideTooltip() {
         tooltip.visible = false;
     }
@@ -229,7 +269,7 @@
                 
                 <!-- County boundaries -->
                 {#each countyPaths as path}
-                    <path d={path} fill="none" stroke="red" stroke-width={1/scale}/>
+                    <path d={path} fill="none" stroke="black" stroke-width={1/scale}/>
                 {/each}
                 
                 <!-- Town boundaries -->
@@ -245,10 +285,6 @@
                         stroke="green" 
                         stroke-width={2/scale} 
                         opacity="0.7"
-                        class="cursor-pointer hover:opacity-100 hover:stroke-width-3"
-                        onmouseenter={(e) => showTooltip(e, trail.name)}
-                        onmouseleave={hideTooltip}
-                        onclick={(e) => e.stopPropagation()}
                     />
                 {/each}
                 
@@ -257,10 +293,45 @@
                     <path d={path} fill="lightblue"/>
                 {/each}
                 
-                <!-- Cities -->
-                {#each cities as city}
-                    <circle cx={city.coords[0]} cy={city.coords[1]} r={3/scale} fill="black" />
-                    <text x={city.coords[0] + 5/scale} y={city.coords[1] - 5/scale} font-size={10/scale} fill="black">{city.name}</text>
+                <!-- Cities with weather data -->
+                {#each citiesWithWeather.length > 0 ? citiesWithWeather : cities as city}
+                    <g class="city-group cursor-pointer">
+                        <circle 
+                            cx={city.coords[0]} 
+                            cy={city.coords[1]} 
+                            r={3/scale} 
+                            fill={city.weather?.temperature ? 
+                                (city.weather.temperature > 70 ? '#ff6b6b' : 
+                                 city.weather.temperature > 50 ? '#ffd93d' : 
+                                 city.weather.temperature > 32 ? '#6bcf7f' : '#74c0fc') : 'black'} 
+                            stroke="white" 
+                            stroke-width={0.5/scale}
+                            onmouseenter={(e) => showCityTooltip(e, city)}
+                            onmouseleave={hideTooltip}
+                        />
+                        <text 
+                            x={city.coords[0] + 5/scale} 
+                            y={city.coords[1] - 5/scale} 
+                            font-size={10/scale} 
+                            fill="black"
+                            onmouseenter={(e) => showCityTooltip(e, city)}
+                            onmouseleave={hideTooltip}
+                        >
+                            {city.name}
+                        </text>
+                        {#if city.weather?.temperature && !city.weather.error}
+                            <text 
+                                x={city.coords[0] + 5/scale} 
+                                y={city.coords[1] + 8/scale} 
+                                font-size={8/scale} 
+                                fill="#666"
+                                onmouseenter={(e) => showCityTooltip(e, city)}
+                                onmouseleave={hideTooltip}
+                            >
+                                {city.weather.temperature}°{city.weather.temperatureUnit}
+                            </text>
+                        {/if}
+                    </g>
                 {/each}
             </g>
         {/if}
@@ -280,10 +351,17 @@
             {Math.round(scale * 100)}%
         </div>
         
+        <!-- Weather loading indicator -->
+        {#if weatherLoading}
+            <div class="absolute top-16 left-2 bg-blue-100 border border-blue-300 px-3 py-2 text-sm rounded shadow-sm">
+                Loading weather data...
+            </div>
+        {/if}
+        
         <!-- Tooltip -->
         {#if tooltip.visible}
             <div 
-                class="absolute bg-black text-white px-2 py-1 text-xs rounded shadow-lg pointer-events-none z-50"
+                class="absolute bg-black text-white px-2 py-1 text-xs rounded shadow-lg pointer-events-none z-50 whitespace-pre-line"
                 style="left: {tooltip.x}px; top: {tooltip.y}px;"
             >
                 {tooltip.text}

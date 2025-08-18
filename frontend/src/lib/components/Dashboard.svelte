@@ -8,7 +8,7 @@
     $effect(() => {
         if (typeof window !== 'undefined') {
             mapWidth = window.innerWidth - 250; // Account for sidebar
-            mapHeight = window.innerHeight - 64; // Account for header
+            mapHeight = window.innerHeight - 40; // Account for smaller header (h-10 = 40px)
         }
     });
 </script>
@@ -72,7 +72,7 @@
     </Sidebar.Sidebar>
     
     <Sidebar.SidebarInset>
-        <header class="flex h-16 shrink-0 items-center gap-2 px-4">
+        <header class="flex h-10 shrink-0 items-center gap-2 px-4">
             <Sidebar.SidebarTrigger />
         </header>
         <main class="flex-1">

@@ -12,6 +12,7 @@
     let townPaths = $state([]);
     let lakePaths = $state([]);
     let trailPaths = $state([]);
+    let trailFeatures = $state([]); // Store original trail features with properties
     let cities = $state([]);
     let loading = $state(true);
     
@@ -21,6 +22,9 @@
     let translateY = $state(0);
     let isDragging = $state(false);
     let lastMousePos = { x: 0, y: 0 };
+    
+    // Tooltip state
+    let tooltip = $state({ visible: false, x: 0, y: 0, text: '' });
     
     onMount(async () => {
         try {
@@ -57,10 +61,16 @@
                     console.log('Town boundaries loaded:', townPaths.length, 'paths');
                 }
                 
-                // Generate trail paths
+                // Generate trail paths and store features
                 if (trailData && trailData.features) {
-                    trailPaths = trailData.features.map(feature => pathGenerator(feature));
+                    trailFeatures = trailData.features.map(feature => ({
+                        path: pathGenerator(feature),
+                        name: feature.properties?.TRAILNAME || feature.properties?.NAME || 'Unnamed Trail',
+                        type: feature.properties?.TRAILTYPE || 'Trail'
+                    }));
+                    trailPaths = trailFeatures.map(trail => trail.path);
                     console.log('Hiking trails loaded:', trailPaths.length, 'paths');
+                    console.log('Sample trail:', trailFeatures[0]); // Debug trail properties
                 }
                 
                 // Set up cities (static data with coordinates)
@@ -170,6 +180,21 @@
         translateX = 0;
         translateY = 0;
     }
+    
+    // Tooltip functions
+    function showTooltip(event, text) {
+        const rect = event.currentTarget.closest('svg').getBoundingClientRect();
+        tooltip = {
+            visible: true,
+            x: event.clientX - rect.left + 10,
+            y: event.clientY - rect.top - 10,
+            text: text
+        };
+    }
+    
+    function hideTooltip() {
+        tooltip.visible = false;
+    }
 </script>
 
 <div class="relative">
@@ -177,6 +202,8 @@
         {width} 
         {height} 
         class="w-full h-full cursor-move"
+        role="img"
+        aria-label="Interactive map of Vermont showing trails, counties, and cities"
         onwheel={handleWheel}
         onmousedown={handleMouseDown}
         onmousemove={handleMouseMove}
@@ -211,8 +238,18 @@
                 {/each}
                 
                 <!-- Hiking trails -->
-                {#each trailPaths as path}
-                    <path d={path} fill="none" stroke="green" stroke-width={1/scale} opacity="0.7"/>
+                {#each trailFeatures as trail, i}
+                    <path 
+                        d={trail.path} 
+                        fill="none" 
+                        stroke="green" 
+                        stroke-width={2/scale} 
+                        opacity="0.7"
+                        class="cursor-pointer hover:opacity-100 hover:stroke-width-3"
+                        onmouseenter={(e) => showTooltip(e, trail.name)}
+                        onmouseleave={hideTooltip}
+                        onclick={(e) => e.stopPropagation()}
+                    />
                 {/each}
                 
                 <!-- Lake Champlain -->
@@ -242,5 +279,15 @@
         <div class="absolute top-2 left-2 bg-white border border-gray-300 px-2 py-1 text-xs rounded shadow-sm">
             {Math.round(scale * 100)}%
         </div>
+        
+        <!-- Tooltip -->
+        {#if tooltip.visible}
+            <div 
+                class="absolute bg-black text-white px-2 py-1 text-xs rounded shadow-lg pointer-events-none z-50"
+                style="left: {tooltip.x}px; top: {tooltip.y}px;"
+            >
+                {tooltip.text}
+            </div>
+        {/if}
     {/if}
 </div>

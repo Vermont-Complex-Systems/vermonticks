@@ -4,7 +4,8 @@
     import { feature } from 'topojson-client';
     import { fetchWithCache } from '$lib/utils/geodata.js';
     import { getWeatherForCities } from '$lib/utils/weather.js';
-    
+    import { base } from "$app/paths";
+
     let { width = 800, height = 600 } = $props();
     
     let vermontPaths = $state([]);
@@ -35,10 +36,10 @@
             
             // Load Vermont, county, town, and trail data
             const [vermontData, countyData, townData, trailData] = await Promise.all([
-                fetchWithCache('vermont_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_vtbnd_SP_v1_3419293524892445662.geojson'),
-                fetchWithCache('counties_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_counties_SP_v1_-196546973346571976.geojson'),
-                fetchWithCache('towns_offline', null, '/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_towns_SP_v1_-4796836414587772833.geojson'),
-                fetchWithCache('trails_offline', null, '/data/Trails.geojson')
+                fetchWithCache('vermont_offline', null, `${base}/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_vtbnd_SP_v1_3419293524892445662.geojson`),
+                fetchWithCache('counties_offline', null, `${base}/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_counties_SP_v1_-196546973346571976.geojson`),
+                fetchWithCache('towns_offline', null, `${base}/data/FS_VCGI_OPENDATA_Boundary_BNDHASH_poly_towns_SP_v1_-4796836414587772833.geojson`),
+                fetchWithCache('trails_offline', null, `${base}/data/Trails.geojson`)
             ]);
             
             if (vermontData && vermontData.features) {

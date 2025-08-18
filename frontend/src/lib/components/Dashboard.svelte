@@ -1,6 +1,16 @@
 <script>
     import * as Sidebar from "$lib/components/ui/sidebar";
     import BaseMap from './BaseMap.svelte';
+    
+    let mapWidth = $state(1200);
+    let mapHeight = $state(800);
+    
+    $effect(() => {
+        if (typeof window !== 'undefined') {
+            mapWidth = window.innerWidth - 250; // Account for sidebar
+            mapHeight = window.innerHeight - 64; // Account for header
+        }
+    });
 </script>
 
 <Sidebar.Provider>
@@ -66,7 +76,7 @@
             <Sidebar.SidebarTrigger />
         </header>
         <main class="flex-1">
-            <BaseMap />
+            <BaseMap width={mapWidth} height={mapHeight} />
         </main>
     </Sidebar.SidebarInset>
 </Sidebar.Provider>

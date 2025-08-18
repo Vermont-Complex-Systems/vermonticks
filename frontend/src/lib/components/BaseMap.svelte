@@ -15,6 +15,13 @@
     let cities = $state([]);
     let loading = $state(true);
     
+    // Zoom and pan state
+    let scale = $state(1);
+    let translateX = $state(0);
+    let translateY = $state(0);
+    let isDragging = $state(false);
+    let lastMousePos = { x: 0, y: 0 };
+    
     onMount(async () => {
         try {
             console.log('Loading map data...');
@@ -109,6 +116,7 @@
                 } catch (error) {
                     console.warn('Could not load surrounding states:', error);
                 }
+                
             }
         } catch (error) {
             console.error('Error loading map data:', error);
@@ -116,50 +124,123 @@
             loading = false;
         }
     });
+    
+    // Zoom and pan functions
+    function handleWheel(event) {
+        event.preventDefault();
+        const delta = event.deltaY > 0 ? 0.9 : 1.1;
+        const newScale = Math.min(Math.max(scale * delta, 1), 8);
+        
+        // Zoom towards mouse position
+        const rect = event.currentTarget.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        
+        const scaleDiff = newScale - scale;
+        translateX -= (mouseX - translateX) * scaleDiff / scale;
+        translateY -= (mouseY - translateY) * scaleDiff / scale;
+        
+        scale = newScale;
+    }
+    
+    function handleMouseDown(event) {
+        isDragging = true;
+        lastMousePos = { x: event.clientX, y: event.clientY };
+        event.preventDefault();
+    }
+    
+    function handleMouseMove(event) {
+        if (!isDragging) return;
+        
+        const dx = event.clientX - lastMousePos.x;
+        const dy = event.clientY - lastMousePos.y;
+        
+        translateX += dx;
+        translateY += dy;
+        
+        lastMousePos = { x: event.clientX, y: event.clientY };
+    }
+    
+    function handleMouseUp() {
+        isDragging = false;
+    }
+    
+    function resetZoom() {
+        scale = 1;
+        translateX = 0;
+        translateY = 0;
+    }
 </script>
 
-<svg {width} {height} class="w-full h-full">
-    {#if loading}
-        <rect x="0" y="0" {width} {height} fill="#f0f0f0" />
-        <text x={width/2} y={height/2} text-anchor="middle" fill="black" font-size="16">
-            Loading map data...
-        </text>
-    {:else}
-        <!-- Surrounding states (background) -->
-        {#each statePaths as path}
-            <path d={path} fill="rgba(200, 200, 200, 0.1)" stroke="rgba(150, 150, 150, 0.5)" stroke-width="0.5"/>
-        {/each}
+<div class="relative">
+    <svg 
+        {width} 
+        {height} 
+        class="w-full h-full cursor-move"
+        onwheel={handleWheel}
+        onmousedown={handleMouseDown}
+        onmousemove={handleMouseMove}
+        onmouseup={handleMouseUp}
+        onmouseleave={handleMouseUp}
+    >
+        {#if loading}
+            <rect x="0" y="0" {width} {height} fill="#f0f0f0" />
+            <text x={width/2} y={height/2} text-anchor="middle" fill="black" font-size="16">
+                Loading map data...
+            </text>
+        {:else}
+            <g transform="translate({translateX},{translateY}) scale({scale})">
+                <!-- Surrounding states (background) -->
+                {#each statePaths as path}
+                    <path d={path} fill="rgba(200, 200, 200, 0.1)" stroke="rgba(150, 150, 150, 0.5)" stroke-width={0.5/scale}/>
+                {/each}
+                
+                <!-- Vermont boundary -->
+                {#each vermontPaths as path}
+                    <path d={path} fill="rgba(255, 165, 0, 0.1)" stroke="orange" stroke-width={2/scale}/>
+                {/each}
+                
+                <!-- County boundaries -->
+                {#each countyPaths as path}
+                    <path d={path} fill="none" stroke="red" stroke-width={1/scale}/>
+                {/each}
+                
+                <!-- Town boundaries -->
+                {#each townPaths as path}
+                    <path d={path} fill="none" stroke="gray" stroke-width={0.2/scale}/>
+                {/each}
+                
+                <!-- Hiking trails -->
+                {#each trailPaths as path}
+                    <path d={path} fill="none" stroke="green" stroke-width={1/scale} opacity="0.7"/>
+                {/each}
+                
+                <!-- Lake Champlain -->
+                {#each lakePaths as path}
+                    <path d={path} fill="lightblue"/>
+                {/each}
+                
+                <!-- Cities -->
+                {#each cities as city}
+                    <circle cx={city.coords[0]} cy={city.coords[1]} r={3/scale} fill="black" />
+                    <text x={city.coords[0] + 5/scale} y={city.coords[1] - 5/scale} font-size={10/scale} fill="black">{city.name}</text>
+                {/each}
+            </g>
+        {/if}
+    </svg>
+    
+    {#if !loading}
+        <!-- Reset button -->
+        <button 
+            onclick={resetZoom}
+            class="absolute top-2 right-2 bg-white border border-gray-300 px-3 py-1 text-sm rounded shadow-sm hover:bg-gray-50"
+        >
+            Reset Zoom
+        </button>
         
-        <!-- Vermont boundary -->
-        {#each vermontPaths as path}
-            <path d={path} fill="rgba(255, 165, 0, 0.1)" stroke="orange" stroke-width="2"/>
-        {/each}
-        
-        <!-- County boundaries -->
-        {#each countyPaths as path}
-            <path d={path} fill="none" stroke="red" stroke-width="1"/>
-        {/each}
-        
-        <!-- Town boundaries -->
-        {#each townPaths as path}
-            <path d={path} fill="none" stroke="gray" stroke-width="0.2"/>
-        {/each}
-        
-        <!-- Hiking trails -->
-        {#each trailPaths as path}
-            <path d={path} fill="none" stroke="green" stroke-width="1" opacity="0.7"/>
-        {/each}
-        
-        <!-- Lake Champlain -->
-        {#each lakePaths as path}
-            <path d={path} fill="lightblue"/>
-        {/each}
-        
-        
-        <!-- Cities -->
-        {#each cities as city}
-            <circle cx={city.coords[0]} cy={city.coords[1]} r="3" fill="black" />
-            <text x={city.coords[0] + 5} y={city.coords[1] - 5} font-size="10" fill="black">{city.name}</text>
-        {/each}
+        <!-- Zoom indicator -->
+        <div class="absolute top-2 left-2 bg-white border border-gray-300 px-2 py-1 text-xs rounded shadow-sm">
+            {Math.round(scale * 100)}%
+        </div>
     {/if}
-</svg>
+</div>

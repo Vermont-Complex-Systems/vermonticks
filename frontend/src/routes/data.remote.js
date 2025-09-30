@@ -8,6 +8,7 @@ import {
   trails,
   waterFeatures as waterFeaturesTable,
   stateFeatures as stateFeaturesTable,
+  elevationContours,
   cities,
   weather,
   allenSites,
@@ -26,14 +27,16 @@ async function loadGeographicData() {
     townData,
     trailData,
     waterData,
-    stateData
+    stateData,
+    elevationData
   ] = await Promise.all([
     db.select().from(vermontBoundaries),
     db.select().from(countyBoundaries),
     db.select().from(townBoundaries),
     db.select().from(trails),
     db.select().from(waterFeaturesTable),
-    db.select().from(stateFeaturesTable)
+    db.select().from(stateFeaturesTable),
+    db.select().from(elevationContours)
   ]);
 
   // Return raw GeoJSON features
@@ -77,7 +80,17 @@ async function loadGeographicData() {
     properties: { stateName: feature.stateName, ...feature.properties ? JSON.parse(feature.properties) : {} }
   }));
 
-  console.log(`Loaded features: ${vermontFeatures.length} Vermont, ${countyFeatures.length} counties, ${townFeatures.length} towns, ${trailFeatures.length} trails, ${waterFeatures.length} water, ${stateFeatures.length} states`);
+  const elevationFeatures = elevationData.map(feature => ({
+    type: "Feature",
+    geometry: JSON.parse(feature.geometry),
+    properties: {
+      elevation: feature.elevation,
+      contourType: feature.contourType,
+      ...feature.properties ? JSON.parse(feature.properties) : {}
+    }
+  }));
+
+  console.log(`Loaded features: ${vermontFeatures.length} Vermont, ${countyFeatures.length} counties, ${townFeatures.length} towns, ${trailFeatures.length} trails, ${waterFeatures.length} water, ${stateFeatures.length} states, ${elevationFeatures.length} contours`);
 
   return {
     vermontFeatures,
@@ -85,7 +98,8 @@ async function loadGeographicData() {
     townFeatures,
     trailFeatures: trailFeatures,
     waterFeatures,
-    stateFeatures
+    stateFeatures,
+    elevationFeatures
   };
 }
 

@@ -13,13 +13,14 @@ import {
   trails,
   waterFeatures,
   stateFeatures,
+  elevationContours,
   cities,
   weather,
   allenSites,
   allenSamples,
   dataSources
 } from '../src/lib/db/schema';
-import { getWeatherData } from '../src/lib/utils/weather';
+import { getWeatherData } from '../src/lib/utils/weather.js';
 
 /**
  * Data Migration Script
@@ -340,6 +341,52 @@ async function migrateStateFeatures() {
   }
 }
 
+async function migrateElevationContours() {
+  console.log('🏔️ Migrating elevation contours...');
+
+  try {
+    // Clear existing data
+    await db.delete(elevationContours);
+
+    // Fetch 20ft contours from Vermont VCGI
+    const apiUrl = 'https://maps.vcgi.vermont.gov/arcgis/rest/services/EGC_services/MAP_VCGI_LIDARCONTOURS_WM_CACHE_v1/MapServer/17/query?geometry=-8230000,5280000,-8200000,5300000&geometryType=esriGeometryEnvelope&inSR=3857&outSR=3857&outFields=OBJECTID,Elevation&f=geojson';
+
+    console.log('Fetching elevation contours from VCGI...');
+    const response = await fetch(apiUrl);
+    const geojson = await response.json();
+
+    if (!geojson.features || geojson.features.length === 0) {
+      console.log('⚠ No elevation contour features found');
+      return;
+    }
+
+    const features = geojson.features;
+    console.log(`Processing ${features.length} elevation contour features...`);
+
+    // Process contour features
+    const contourData = features.map((feature: any) => ({
+      elevation: feature.properties.Elevation || 0,
+      contourType: feature.properties.Type?.includes('Index') ? 'index' : 'intermediate',
+      geometry: JSON.stringify(feature.geometry),
+      properties: JSON.stringify(feature.properties),
+      source: apiUrl,
+      updatedAt: Date.now()
+    }));
+
+    // Insert in batches to avoid SQLite limits
+    const batchSize = 100;
+    for (let i = 0; i < contourData.length; i += batchSize) {
+      const batch = contourData.slice(i, i + batchSize);
+      await db.insert(elevationContours).values(batch);
+      console.log(`✅ Inserted contour batch ${i + 1}-${Math.min(i + batchSize, contourData.length)}`);
+    }
+
+    console.log(`✅ Successfully migrated ${contourData.length} elevation contours`);
+  } catch (error) {
+    console.log(`⚠ Skipping elevation contours: ${error}`);
+  }
+}
+
 async function migrateAllenSites() {
   console.log('🔬 Migrating Allen Lab research sites...');
 
@@ -492,6 +539,7 @@ async function main() {
     await migrateTrails();
     await migrateWaterFeatures();
     await migrateStateFeatures();
+    // await migrateElevationContours(); APIURL DOESN'T WORK. CAN'T FIGURE IT OUT.
     await migrateAllenSites();
     await migrateAllenSamples();
     await migrateCitiesAndWeather();

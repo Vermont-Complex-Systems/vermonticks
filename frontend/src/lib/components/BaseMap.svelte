@@ -14,6 +14,7 @@
         trailFeatures = [],
         waterFeatures = [],
         stateFeatures = [],
+        elevationFeatures = [],
         citiesWithWeather = [],
         allenSites = [],
     } = $props();
@@ -146,15 +147,32 @@
                 <path d={path(feature)} fill="none" stroke="black" stroke-width={1/scale}/>
             {/each}
 
-            <!-- Towns -->
-            {#each townFeatures as feature}
-                <path d={path(feature)} fill="none" stroke="gray" stroke-width={0.2/scale}/>
-            {/each}
+            <!-- Elevation contours - only show when zoomed in -->
+            {#if scale > 4}
+                {#each elevationFeatures as feature}
+                    <path
+                        d={path(feature)}
+                        fill="none"
+                        stroke={feature.properties.contourType === 'index' ? '#8B4513' : '#D2B48C'}
+                        stroke-width={(feature.properties.contourType === 'index' ? 1.5 : 0.5)/scale}
+                        opacity="0.6"
+                    />
+                {/each}
+            {/if}
 
-            <!-- Trails -->
-            {#each trailFeatures as trail}
-                <path d={path(trail)} fill="none" stroke="green" stroke-width={2/scale} opacity="0.3"/>
-            {/each}
+            <!-- Towns - only show when zoomed in -->
+            {#if scale > 3}
+                {#each townFeatures as feature}
+                    <path d={path(feature)} fill="none" stroke="gray" stroke-width={0.2/scale}/>
+                {/each}
+            {/if}
+
+            <!-- Trails - only show when zoomed in -->
+            {#if scale > 2}
+                {#each trailFeatures as trail}
+                    <path d={path(trail)} fill="none" stroke="green" stroke-width={2/scale} opacity="0.3"/>
+                {/each}
+            {/if}
 
             <!-- Water -->
             {#each waterFeatures as feature}

@@ -68,6 +68,17 @@ export const stateFeatures = sqliteTable('state_features', {
   updatedAt: integer('updated_at').notNull(),
 });
 
+// Elevation contours
+export const elevationContours = sqliteTable('elevation_contours', {
+  id: integer('id').primaryKey(),
+  elevation: real('elevation').notNull(),    // Elevation in feet
+  contourType: text('contour_type'),         // 'index' or 'intermediate'
+  geometry: text('geometry').notNull(),      // LineString geometry
+  properties: text('properties'),            // Additional properties as JSON
+  source: text('source').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
+
 /**
  * Cities and Weather Schema
  * Vermont cities with coordinates and weather data

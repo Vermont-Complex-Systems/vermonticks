@@ -27,18 +27,6 @@ jobs:
         working-directory: ./frontend
         run: pnpm install
 
-      - name: Setup database and seed data
-        working-directory: ./frontend
-        env:
-          DATABASE_URL: ./data.db
-        run: |
-          echo "Creating database schema..."
-          pnpm db:push
-          echo "Verifying database file exists..."
-          ls -la data.db || echo "Database file not found!"
-          echo "Seeding database..."
-          pnpm db:seed
-
       - name: build
         working-directory: ./frontend
         env:

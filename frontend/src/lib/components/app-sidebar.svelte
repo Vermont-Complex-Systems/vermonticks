@@ -8,6 +8,7 @@
         updatePathogen,
         updateModel
     } from "$lib/stores/shared.svelte";
+	import { base } from "$app/paths";
 
     const sidebar = Sidebar.useSidebar();
 </script>
@@ -23,7 +24,7 @@
 
         <div class="px-5 py-2">
             <div>
-                <img src="/MAP2LE_AbstractLogo.png" alt="MAP2LE Logo" class="w-30 h-auto mb-2 mix-blend-multiply opacity-80" />
+                <img src="{base}/MAP2LE_AbstractLogo.png" alt="MAP2LE Logo" class="w-30 h-auto mb-2 mix-blend-multiply opacity-80" />
                 <p class="text-s italic text-muted-foreground">Monitoring, Analysis, and Prediction of Pathogens in Local Ecosystems</p>
             </div>
         </div>

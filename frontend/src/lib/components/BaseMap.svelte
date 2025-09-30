@@ -17,6 +17,7 @@
         elevationFeatures = [],
         citiesWithWeather = [],
         allenSites = [],
+        agrSurvey = [],
     } = $props();
 
     // container & dimensions
@@ -121,6 +122,25 @@
         showTooltip(event, text, null, site.nymphTimeseries);
     }
 
+    function showAgrSurveyTooltip(event, survey) {
+        const props = survey.properties;
+        const text = `${props.town}, ${props.county}\nTicks Tested: ${props.ticksTested}\n` +
+            `Lyme Disease: ${props.borreliaBurgdorferiPercent?.toFixed(1) || 0}%\n` +
+            `Anaplasmosis: ${props.anaplasmaPhagocytophilumPercent?.toFixed(1) || 0}%\n` +
+            `Babesiosis: ${props.babesiaMicrotiPercent?.toFixed(1) || 0}%`;
+        showTooltip(event, text);
+    }
+
+    // Color scale for Lyme disease prevalence
+    function getLymeColor(percent) {
+        if (!percent || percent === 0) return 'rgba(200, 200, 200, 0.3)';
+        if (percent < 20) return 'rgba(255, 237, 160, 0.6)';
+        if (percent < 40) return 'rgba(254, 178, 76, 0.6)';
+        if (percent < 60) return 'rgba(253, 141, 60, 0.6)';
+        if (percent < 80) return 'rgba(240, 59, 32, 0.6)';
+        return 'rgba(189, 0, 38, 0.6)';
+    }
+
 </script>
 
 <div bind:this={mapContainer} bind:clientWidth={width} bind:clientHeight={height} class="w-full h-screen overflow-hidden relative touch-none">
@@ -145,6 +165,19 @@
             <!-- Counties -->
             {#each countyFeatures as feature}
                 <path d={path(feature)} fill="none" stroke="black" stroke-width={1/scale}/>
+            {/each}
+
+            <!-- AGR Survey 2024 - Town-level pathogen data -->
+            {#each agrSurvey as survey}
+                <path
+                    d={path(survey)}
+                    fill={getLymeColor(survey.properties.borreliaBurgdorferiPercent)}
+                    stroke="rgba(100, 100, 100, 0.5)"
+                    stroke-width={0.5/scale}
+                    class="cursor-pointer"
+                    onmouseenter={(e) => showAgrSurveyTooltip(e, survey)}
+                    onmouseleave={hideTooltip}
+                />
             {/each}
 
             <!-- Elevation contours - only show when zoomed in -->

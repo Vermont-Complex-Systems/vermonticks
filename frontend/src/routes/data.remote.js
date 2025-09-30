@@ -12,7 +12,8 @@ import {
   cities,
   weather,
   allenSites,
-  allenSamples
+  allenSamples,
+  agrSurvey2024
 } from '$lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 
@@ -213,17 +214,84 @@ async function loadAllenSites() {
   return processedSites;
 }
 
+// Normalize town names for matching (handle "St" vs "Saint", apostrophes, etc)
+function normalizeTownName(name) {
+  return name
+    .toLowerCase()
+    .replace(/^st\s/i, 'saint ')
+    .replace(/\s+gore$/i, "'s gore")
+    .replace(/averys/i, "avery's")
+    .replace(/warrens/i, "warren's")
+    .trim();
+}
+
+// Load AGR 2024 Tick Survey data joined with town boundaries
+async function loadAgrSurvey() {
+  console.log('Loading AGR 2024 Tick Survey data...');
+
+  // Get all survey data (excluding TOTAL row)
+  const surveyData = await db.select().from(agrSurvey2024);
+  const filteredSurvey = surveyData.filter(s => s.town !== 'TOTAL');
+
+  // Get all town boundaries
+  const towns = await db.select().from(townBoundaries);
+
+  // Create town name lookup map
+  const townMap = new Map();
+  towns.forEach(town => {
+    const props = town.properties ? JSON.parse(town.properties) : {};
+    const normalizedName = normalizeTownName(props.TOWNNAMEMC || town.townName);
+    townMap.set(normalizedName, town);
+  });
+
+  // Join survey data with town boundaries
+  const agrWithGeometry = filteredSurvey.map(survey => {
+    const normalizedSurveyTown = normalizeTownName(survey.town);
+    const matchedTown = townMap.get(normalizedSurveyTown);
+
+    if (!matchedTown) {
+      console.warn(`⚠ No town boundary match for: ${survey.town}`);
+      return null;
+    }
+
+    return {
+      type: 'Feature',
+      geometry: JSON.parse(matchedTown.geometry),
+      properties: {
+        town: survey.town,
+        county: survey.county,
+        ticksTested: survey.ticksTested,
+        borreliaBurgdorferiCount: survey.borreliaBurgdorferiCount,
+        borreliaBurgdorferiPercent: survey.borreliaBurgdorferiPercent,
+        anaplasmaPhagocytophilumCount: survey.anaplasmaPhagocytophilumCount,
+        anaplasmaPhagocytophilumPercent: survey.anaplasmaPhagocytophilumPercent,
+        babesiaMicrotiCount: survey.babesiaMicrotiCount,
+        babesiaMicrotiPercent: survey.babesiaMicrotiPercent,
+        borreliaMiyamotoiCount: survey.borreliaMiyamotoiCount,
+        borreliaMiyamotoiPercent: survey.borreliaMiyamotoiPercent,
+        deerTickVirusCount: survey.deerTickVirusCount,
+        deerTickVirusPercent: survey.deerTickVirusPercent,
+      }
+    };
+  }).filter(Boolean);
+
+  console.log(`Loaded ${agrWithGeometry.length} AGR survey records with geometry (${filteredSurvey.length - agrWithGeometry.length} unmatched)`);
+  return agrWithGeometry;
+}
+
 // Main prerender function - loads all raw map data from SQLite
 export const loadMapData = prerender(async () => {
-  const [geographicData, citiesWithWeather, allenResearchSites] = await Promise.all([
+  const [geographicData, citiesWithWeather, allenResearchSites, agrSurveyData] = await Promise.all([
       loadGeographicData(),
       loadCitiesWithWeather(),
-      loadAllenSites()
+      loadAllenSites(),
+      loadAgrSurvey()
   ]);
-  
+
   return {
       ...geographicData,
       citiesWithWeather,
       allenSites: allenResearchSites,
+      agrSurvey: agrSurveyData,
   };
 });

@@ -18,6 +18,7 @@ import {
   weather,
   allenSites,
   allenSamples,
+  agrSurvey2024,
   dataSources
 } from '../src/lib/db/schema';
 import { getWeatherData } from '../src/lib/utils/weather.js';
@@ -446,6 +447,47 @@ async function migrateAllenSamples() {
   }
 }
 
+async function migrateAgrSurvey2024() {
+  console.log('🔬 Migrating 2024 AGR Tick Survey...');
+
+  try {
+    // Read the CSV file
+    const csvContent = readFileSync('./src/data/2024_AGR_Tick_Survey_Final_Report.csv', 'utf-8');
+    const surveys = csvParse(csvContent);
+
+    // Clear old data
+    await db.delete(agrSurvey2024);
+
+    console.log(`Processing ${surveys.length} survey records...`);
+
+    for (const survey of surveys) {
+      const ticksTested = parseInt(survey['Blacklegged Ticks Tested']) || 0;
+
+      await db.insert(agrSurvey2024).values({
+        town: survey.Town,
+        county: survey.County,
+        ticksTested,
+        borreliaBurgdorferiCount: parseInt(survey['Borrelia burgdorferi Count']) || null,
+        borreliaBurgdorferiPercent: parseFloat(survey['Borrelia burgdorferi %']) || null,
+        anaplasmaPhagocytophilumCount: parseInt(survey['Anaplasma phagocytophilum Count']) || null,
+        anaplasmaPhagocytophilumPercent: parseFloat(survey['Anaplasma phagocytophilum %']) || null,
+        babesiaMicrotiCount: parseInt(survey['Babesia microti Count']) || null,
+        babesiaMicrotiPercent: parseFloat(survey['Babesia microti %']) || null,
+        borreliaMiyamotoiCount: parseInt(survey['Borrelia miyamotoi Count']) || null,
+        borreliaMiyamotoiPercent: parseFloat(survey['Borrelia miyamotoi %']) || null,
+        deerTickVirusCount: parseInt(survey['Deer Tick Virus Count']) || null,
+        deerTickVirusPercent: parseFloat(survey['Deer Tick Virus %']) || null,
+        createdAt: Date.now(),
+        source: 'src/data/2024_AGR_Tick_Survey_Final_Report.csv'
+      });
+    }
+
+    console.log(`✓ Inserted ${surveys.length} AGR survey records`);
+  } catch (error) {
+    console.error('❌ Failed to migrate AGR survey:', error);
+  }
+}
+
 async function migrateCitiesAndWeather() {
   console.log('🏙️ Migrating cities and weather...');
 
@@ -507,6 +549,22 @@ async function migrateCitiesAndWeather() {
       console.log(`⚠ Failed to fetch weather for ${city.name}: ${error}`);
     }
   }
+
+  // Record successful weather fetch
+  await db.insert(dataSources).values({
+    name: 'weather',
+    apiUrl: 'https://api.weather.gov',
+    fallbackUrl: null,
+    lastFetched: Date.now(),
+    lastError: null,
+    isActive: true
+  }).onConflictDoUpdate({
+    target: dataSources.name,
+    set: {
+      lastFetched: Date.now(),
+      lastError: null
+    }
+  });
 }
 
 async function main() {
@@ -518,6 +576,7 @@ async function main() {
       console.log('🧹 Force refresh: Clearing all existing data...');
       await db.delete(weather);
       await db.delete(cities);
+      await db.delete(agrSurvey2024);
       await db.delete(allenSamples);
       await db.delete(allenSites);
       await db.delete(stateFeatures);
@@ -542,6 +601,7 @@ async function main() {
     // await migrateElevationContours(); APIURL DOESN'T WORK. CAN'T FIGURE IT OUT.
     await migrateAllenSites();
     await migrateAllenSamples();
+    await migrateAgrSurvey2024();
     await migrateCitiesAndWeather();
 
     console.log('\n✅ Data migration completed successfully!');

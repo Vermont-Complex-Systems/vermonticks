@@ -11,7 +11,7 @@
 
 <div class="w-full">
     {#if width > 0}
-        <Plot {width} {height} marginRight={15} frame y={{grid:true}}>
+        <Plot {width} {height} marginRight={25} frame y={{grid:true}}>
             <Dot {data} x="year" y="count" stroke="black"/>
             <Line {data} x="year" y="count" stroke="black"/>
         </Plot>

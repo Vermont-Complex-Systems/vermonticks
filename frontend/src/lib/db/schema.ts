@@ -118,6 +118,26 @@ export const allenSamples = sqliteTable('allen_samples', {
   source: text('source').notNull(),
 });
 
+// Vermont AGR 2024 Tick Survey
+export const agrSurvey2024 = sqliteTable('agr_survey_2024', {
+  id: integer('id').primaryKey(),
+  town: text('town').notNull(),
+  county: text('county').notNull(),
+  ticksTested: integer('ticks_tested').notNull(),
+  borreliaBurgdorferiCount: integer('borrelia_burgdorferi_count'),
+  borreliaBurgdorferiPercent: real('borrelia_burgdorferi_percent'),
+  anaplasmaPhagocytophilumCount: integer('anaplasma_phagocytophilum_count'),
+  anaplasmaPhagocytophilumPercent: real('anaplasma_phagocytophilum_percent'),
+  babesiaMicrotiCount: integer('babesia_microti_count'),
+  babesiaMicrotiPercent: real('babesia_microti_percent'),
+  borreliaMiyamotoiCount: integer('borrelia_miyamotoi_count'),
+  borreliaMiyamotoiPercent: real('borrelia_miyamotoi_percent'),
+  deerTickVirusCount: integer('deer_tick_virus_count'),
+  deerTickVirusPercent: real('deer_tick_virus_percent'),
+  createdAt: integer('created_at').notNull(),
+  source: text('source').notNull(),
+});
+
 // Weather data for cities (refreshed periodically)
 export const weather = sqliteTable('weather', {
   id: integer('id').primaryKey(),
@@ -183,6 +203,9 @@ export type NewAllenSite = typeof allenSites.$inferInsert;
 
 export type AllenSample = typeof allenSamples.$inferSelect;
 export type NewAllenSample = typeof allenSamples.$inferInsert;
+
+export type AgrSurvey2024 = typeof agrSurvey2024.$inferSelect;
+export type NewAgrSurvey2024 = typeof agrSurvey2024.$inferInsert;
 
 export type Weather = typeof weather.$inferSelect;
 export type NewWeather = typeof weather.$inferInsert;

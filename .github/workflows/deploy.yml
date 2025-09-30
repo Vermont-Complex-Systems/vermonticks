@@ -27,10 +27,19 @@ jobs:
         working-directory: ./frontend
         run: pnpm install
 
+      - name: Setup database and seed data
+        working-directory: ./frontend
+        env:
+          DATABASE_URL: data.db
+        run: |
+          pnpm db:push
+          pnpm db:seed
+
       - name: build
         working-directory: ./frontend
         env:
           BASE_PATH: '/${{ github.event.repository.name }}'
+          DATABASE_URL: data.db
         run: |
           pnpm run build
 

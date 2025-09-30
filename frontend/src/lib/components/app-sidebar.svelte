@@ -9,13 +9,17 @@
     } from "$lib/stores/shared.svelte";
 </script>
 
-<Sidebar.Sidebar>
+<Sidebar.Sidebar collapsible="none" class="bg-gray-200">
     <Sidebar.SidebarHeader>
-        <div class="px-4 py-2">
-            <h2 class="text-sm font-bold">MAP2LE</h2>
-            <p class="text-xs italic text-muted-foreground">Monitoring, Analysis, and Prediction of Pathogens in Local Ecosystems</p>
+        <div class="flex items-center gap-3 px-5 py-2">
+            <div>
+                <img src="/MAP2LE_AbstractLogo.png" alt="MAP2LE Logo" class="w-30 h-auto mb-2 mix-blend-multiply opacity-80" />
+                <p class="text-s italic text-muted-foreground">Monitoring, Analysis, and Prediction of Pathogens in Local Ecosystems</p>
+            </div>
         </div>
     </Sidebar.SidebarHeader>
+
+
     <Sidebar.SidebarContent>
         <Sidebar.SidebarGroup>
             <Sidebar.SidebarGroupLabel>Activity</Sidebar.SidebarGroupLabel>

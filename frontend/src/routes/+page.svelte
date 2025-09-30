@@ -11,7 +11,9 @@
         </div>
     </div>
 {:then mapData}
-    <Dashboard {mapData} />
+    <div class="h-screen">
+        <Dashboard {mapData} />
+    </div>
 {:catch error}
     <div class="flex h-screen items-center justify-center">
         <div class="text-center">

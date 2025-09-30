@@ -1,5 +1,6 @@
 <script>
     import * as Sidebar from "$lib/components/ui/sidebar";
+    import { X } from '@lucide/svelte';
     import {
         sidebarState,
         updateActivity,
@@ -7,11 +8,20 @@
         updatePathogen,
         updateModel
     } from "$lib/stores/shared.svelte";
+
+    const sidebar = Sidebar.useSidebar();
 </script>
 
-<Sidebar.Sidebar collapsible="none" class="bg-gray-200">
-    <Sidebar.SidebarHeader>
-        <div class="flex items-center gap-3 px-5 py-2">
+<Sidebar.Sidebar collapsible="offcanvas" class="bg-gray-200">
+    <Sidebar.SidebarHeader class="relative">
+        <!-- Close button positioned at top-right -->
+        <div class="sm:hidden absolute top-2 right-2 z-10">
+            <button onclick={sidebar.toggle} class="p-1 hover:bg-gray-300 rounded">
+                <X class="w-5 h-5 text-gray-600" />
+            </button>
+        </div>
+
+        <div class="px-5 py-2">
             <div>
                 <img src="/MAP2LE_AbstractLogo.png" alt="MAP2LE Logo" class="w-30 h-auto mb-2 mix-blend-multiply opacity-80" />
                 <p class="text-s italic text-muted-foreground">Monitoring, Analysis, and Prediction of Pathogens in Local Ecosystems</p>

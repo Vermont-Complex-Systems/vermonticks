@@ -3,8 +3,6 @@
 frontend/node_modules/
 yarn-error.log
 frontend/src/lib/db/migrations/
-frontend/src/data/allen_sample_metadata_20250609.csv
-frontend/src/data/allen_site_metadata.csv
 
 CLAUDE.md
 .mcp.json

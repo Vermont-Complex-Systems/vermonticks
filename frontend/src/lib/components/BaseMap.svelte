@@ -3,6 +3,7 @@
     import { geoPath, geoMercator } from "d3-geo";
     import { zoom, zoomIdentity } from "d3-zoom";
     import { select } from "d3-selection";
+    import { X } from '@lucide/svelte';
     import TimeseriesChart from './TimeseriesChart.svelte';
 
     // props (Svelte 5 runes style)
@@ -84,8 +85,8 @@
         const rect = mapContainer.getBoundingClientRect();
         tooltip = {
             visible: true,
-            x: event.clientX - rect.left + 10,
-            y: event.clientY - rect.top - 10,
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
             text,
             component,
             data
@@ -118,10 +119,10 @@
         const text = `${site.site}\nElevation: ${site.elevation || "N/A"} ft\nTotal Nymphs: ${site.totalNymphs || 0}\nTotal Samples: ${site.totalSamples || 0}`;
         showTooltip(event, text, null, site.nymphTimeseries);
     }
-    
+
 </script>
 
-<div bind:this={mapContainer} bind:clientWidth={width} bind:clientHeight={height} class="w-full h-screen overflow-hidden relative">
+<div bind:this={mapContainer} bind:clientWidth={width} bind:clientHeight={height} class="w-full h-screen overflow-hidden relative touch-none">
     <svg
         viewBox="0 0 {width} {height}"
         preserveAspectRatio="xMidYMid meet"
@@ -221,8 +222,7 @@
                         stroke-width="1"
                         role="img"
                         aria-label={site.site}
-                        onmouseenter={(e) => showAllenSiteTooltip(e, site)}
-                        onmouseleave={hideTooltip}
+                        onclick={(e) => showAllenSiteTooltip(e, site)}
                     />
                     {#if scale > 7}
                         <text
@@ -233,8 +233,7 @@
                             font-weight="600"
                             role="img"
                             aria-label={site.site}
-                            onmouseenter={(e) => showAllenSiteTooltip(e, site)}
-                            onmouseleave={hideTooltip}
+                            onclick={(e) => showAllenSiteTooltip(e, site)}
                         >
                             {site.site}
                         </text>
@@ -252,18 +251,24 @@
         Reset Zoom
     </button>
 
-    <!-- Zoom indicator -->
-    <div class="absolute top-2 left-2 bg-white border border-gray-300 px-2 py-1 text-xs rounded shadow-sm">
-        {Math.round(scale * 100)}%
-    </div>
 
     <!-- Tooltip -->
     {#if tooltip.visible}
         <div
-            class="absolute bg-white border border-gray-300 p-3 rounded shadow-lg pointer-events-none z-50"
-            style="left: {tooltip.x}px; top: {tooltip.y}px;"
+            class="bg-white border border-gray-300 p-3 shadow-lg
+                   sm:absolute sm:rounded sm:max-w-xs sm:transform sm:-translate-x-1/2 sm:-translate-y-full
+                   max-sm:fixed max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:rounded-t-lg max-sm:max-h-[50vh] max-sm:overflow-y-auto"
+            style={`z-index: 1000; ${window.innerWidth >= 640 ? `left: ${tooltip.x}px; top: ${tooltip.y - 10}px;` : ''}`}
         >
-            <div class="text-xs text-gray-700 mb-2 whitespace-pre-line">
+            <!-- Close button -->
+            <button
+                onclick={hideTooltip}
+                class="absolute top-1 right-1 p-1 hover:bg-gray-100 rounded"
+            >
+                <X class="w-4 h-4 text-gray-500" />
+            </button>
+
+            <div class="text-xs text-gray-700 mb-2 whitespace-pre-line pr-6">
                 {tooltip.text}
             </div>
             {#if tooltip.data && tooltip.data.length > 0}

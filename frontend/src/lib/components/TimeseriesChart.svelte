@@ -1,10 +1,19 @@
 <script>
-    let { data = [], width = 300, height = 200  } = $props();
-    
+    let { data = [] } = $props();
+
     import { Dot, Line, Plot } from 'svelteplot'
+    import { innerWidth } from 'svelte/reactivity/window';
+
+    // Responsive sizing: fixed size on mobile to avoid zoom interference
+    let width = $derived(innerWidth.current >= 640 ? 300 : 350);
+    let height = $derived(innerWidth.current >= 640 ? 170 : 150);
 </script>
 
-<Plot grid {height} {width} marginRight={30} frame> 
-    <Dot {data} x="year" y="count" stroke="black"/>
-    <Line {data} x="year" y="count" stroke="black"/>
-</Plot>
+<div class="w-full">
+    {#if width > 0}
+        <Plot {width} {height} marginRight={15} frame>
+            <Dot {data} x="year" y="count" stroke="black"/>
+            <Line {data} x="year" y="count" stroke="black"/>
+        </Plot>
+    {/if}
+</div>
